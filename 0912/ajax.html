@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>Ajaxの簡単な例</title>
+        <script>
+            window.onload = function() {
+                // XMLHttpRequestオブジェクトを生成
+                var req = new XMLHttpRequest();
+                // サーバーとの通信時の処理方法を登録
+                req.onreadystatechange = function(){
+                    if(req.readyState == 4) {
+                        if(req.status == 200) {
+                            document.getElementById("view").innerHTML = req.responseText;
+                        }
+                    }
+                };
+                // リクエストを送信して、通信を開始
+                req.open("GET", "data.txt");
+                req.send(null);
+            };
+        </script>
+    </head>
+    <body>
+        <p id="view"></p>
+    </body>
+</html>
