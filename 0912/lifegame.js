@@ -146,6 +146,17 @@ state.clearAllCell = function() {
     state.tellGenerationChange(state.generation = 0);
 };
 
+state.pointRandomCell = function() {
+    // ある程度ランダム（重複が有るため完全ではない）
+    for(var i=0; i<Math.floor(Math.random()*state.nx*state.ny); i++) {
+        var ix = Math.floor(Math.random()*state.nx);
+        var iy = Math.floor(Math.random()*state.ny);
+        state.setLife(ix, iy, 1);
+    }
+    // 世代数を0としコールバックする
+    state.tellGenerationChange(state.generation = 0);
+};
+
 view.create = function(nx, ny, width, height) {
     // レイヤーを表すcanvas要素を生成
     view.layer = [];
@@ -352,6 +363,15 @@ controls.clear = function(state) {
     input.addEventListener("click", function(e){
         clearInterval(state.timer); state.playing = false;
         state.clearAllCell();
+    });
+    return input;
+};
+
+controls.randomPoint = function(state) {
+    var input = elt("input",{ type: "button", value: "ランダム" });
+    input.addEventListener("click", function(e){
+        clearInterval(state.timer); state.playing = false;
+        state.pointRandomCell();
     });
     return input;
 };
