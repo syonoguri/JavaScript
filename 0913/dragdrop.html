@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>ドラッグ＆ドロップの例</title>
+        <script>
+            window.onload = function() {
+                var color = document.getElementById("color");
+                var dropbox = document.getElementById("dropbox");
+                // ドラッグ開始時にカラー値をdataTransferのデータに設定
+                color.ondragstart = function(e) {
+                    e.dataTransfer.setData("text/plain", e.target.value);
+                };
+                dropbox.ondragover = function(e) {
+                    e.preventDefault();
+                };
+                dropbox.ondrop = function(e) {
+                    e.preventDefault();
+                    e.target.style.backgroundColor = e.dataTransfer.getData("text/plain");
+                }
+                dropbox.addEventListener("dragenter", function(e){
+                    e.target.style.borderColor = "red";
+                },false);
+                dropbox.addEventListener("dragleave", function(e) {
+                    e.target.style.borderColor = "gray";
+                },false);
+                dropbox.addEventListener("drop", function(e) {
+                    e.target.style.borderColor = "gray";
+                }, false);
+            }
+        </script>
+        <style>
+            #color { margin-bottom: 10px; }
+            #dropbox { width: 150px; padding:50px; border: 1px solid gray; }
+        </style>
+    </head>
+    <body>
+        <input type="color" id="color" draggable="true">
+        <div id="dropbox">ここにドラッグ</div>
+    </body>
+</html>

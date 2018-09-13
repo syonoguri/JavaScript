@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>Web Workers例</title>
+        <script src="prime.js"></script>
+        <script>
+            window.onload = function() {
+                var N = "100000000";
+                var mainstart = document.getElementById("mainstart");
+                var workerstart = document.getElementById("workerstart");
+                var clear = document.getElementById("clear");
+                var output = document.getElementById("output");
+                startClock();
+                // Workerオブジェクトを生成
+                var worker = new Worker("worker.js")
+                // messageイベントハンドラを登録
+                worker.onmessage = function(e) {
+                    console.log("recieved: " + new Date());
+                    output.innerHTML = N + "以下の最大素数 = "+e.data;
+                };
+                // ワーカーで処理
+                workerstart.onclick = function() {
+                    console.log("send: " + new Date());
+                    worker.postMessage(N);
+                };
+                // メインスレッドで処理
+                mainstart.onclick = function() {
+                    output.innerHTML = N + "以下の最大素数 = " + prime(N);
+                };
+                // 結果をクリア
+                clear.onclick = function() {
+                    output.innerHTML = "";
+                };
+            };
+            function startClock() {
+                var clock = document.getElementById("clock");
+                var startTime = new Date();
+                setInterval(function() {
+                    clock.innerHTML = ((new Date() - startTime)/1000).toFixed(1);
+                },100);
+            }
+        </script>
+    </head>
+    <body>
+        <div id="clock"></div>
+        <input type="button" value="メインスレッドで実行" id="mainstart">
+        <input type="button" value="ワーカースレッドで実行" id="workerstart">
+        <input type="button" value="結果のクリア" id="clear">
+        <div id="output"></div>
+    </body>
+</html>

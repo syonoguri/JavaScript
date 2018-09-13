@@ -29,7 +29,18 @@ function createCanvas(canvasWidth,canvasHeight) {
         // 選択された描画ツールを初期化
         paintTools[paintTool](e,ctx);
     }, false);
+    canvas.addEventListener("dragover", function(e) {
+        e.preventDefault();
+    },false);
+    canvas.addEventListener("drop", function(e){
+        var files = e.dataTransfer.files;
+        if( files[0].type.substring(0,6) !== "image/" ) return;
+        loadImageURL(ctx, URL.createObjectURL(files[0]));
+        e.preventDefault();
+    }, false);
+
     return [canvas, ctx];
+    
 }
 
 /*---------------------------------------------------
@@ -187,3 +198,99 @@ controls.alpha = function(ctx) {
     }, false);
     return label
 };
+
+controls.save = function(ctx) {
+    var input = elt("input", {type: "button", value:"保存"});
+    var label = elt("label", null, " ", input);
+    input.addEventListener("click", function(e) {
+        var dataURL = ctx.canvas.toDataURL();
+        open(dataURL, "save");
+    },false);
+    return label;
+};
+
+// ファイル入力のコントロール
+controls.file = function(ctx) {
+    var input = elt("input", {type:"file"});
+    var label = elt("label", null, " ", input);
+    input.addEventListener("change", function(e) {
+        if(input.files.length == 0) return;
+        var reader = new FileReader();
+        reader.onload = function() {
+            loadImageURL(ctx, reader.result);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }, false);
+    return label;
+};
+// urlをctxに描画する（画像がCanvasの境界線に内接するようにする）
+function loadImageURL(ctx,url) {
+    var image = document.createElement("img");
+    image.onload = function() {
+        var factor = Math.min(
+            ctx.canvas.width/this.width, ctx.canvas.height/this.height
+        );
+        var wshift = (ctx.canvas.width - factor*this.width )/2;
+        var hshift = (ctx.canvas.height - factor*this.height)/2;
+        var savedColor = ctx.fillStyle;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+        ctx.drawImage(image, 0, 0,
+            this.width, this.height, wshift, hshift,
+            this.width*factor, this.height*factor
+            );
+            ctx.fillStyle = savedColor;
+    };
+    image.src = url;
+}
+var filterTools = Object.create(null);
+
+controls.filter = function(ctx) {
+    var DEFAULT_FILTER = 0;
+    var select = elt("select",null);
+    var label = elt("label",null, " ",select);
+    select.appendChild(elt("option",{value: "filter"},"フィルタ"));
+    for(var name in filterTools) {
+        select.appendChild(elt("option",{value: name},name));
+    }
+    select.selectedIndex = DEFAULT_FILTER;
+    select.addEventListener("change", function(e) {
+        var filterTool = this.children[this.selectedIndex].value;
+        var inputImage = ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
+        // フィルタツールを実行し、使用したワーカーを受け取る
+        var worker = filterTools[filterTool](inputImage);
+        // ワーカーからの処理結果をメッセージから受け取り描画する
+        worker.onmessage = function(e) {
+            var outputImage = e.data;
+            ctx.putImageData(outputImage,0,0);
+            worker.terminate();
+        };
+        select.selectedIndex = DEFAULT_FILTER;
+    }, false);
+    return label;
+};
+
+
+
+// * ぼかしフィルタ
+filterTools.blur = function(inputImage) {
+    var size =2;
+    var W =[];
+    for(var i=0; i<=2+size; i++) {
+        W[i] = [];
+        for(var j=0; j<=2*size; j++) {
+            W[i][j] = 1;
+        }
+    }
+    var worker = new Worker("weightedaverage.js");
+    worker.postMessage({
+        image: inputImage,
+        n: size,
+        Weight: W,
+        keepBrightness: true,
+        offset: 0
+    });
+    return worker;
+};
+
+
